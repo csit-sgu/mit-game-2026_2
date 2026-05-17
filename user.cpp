@@ -129,11 +129,11 @@ void ApplyGravity(Object &obj, float dt) {}
 
 void MakeJump(Object &obj, float dt) {
     if (obj.physics.can_jump) {
-        float jumpPower = -350.0f;  // обычный прыжок
+        float jumpPower = 350.0f;  // обычный прыжок
         
         // Если зажат Shift — прыжок выше
         if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) {
-            jumpPower = -550.0f;
+            jumpPower = 550.0f;
         }
         
         obj.physics.speed.y = jumpPower;
