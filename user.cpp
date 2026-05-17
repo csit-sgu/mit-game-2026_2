@@ -246,7 +246,7 @@ void PlayerControl(Context &ctx, Object &player, float dt) {
     if (ctx.input_blocked) return;
     Vector2 move = {0.0, 0.0};
     if (IsKeyDown(KEY_SPACE)) MakeJump(player, dt);
-    if (IsKeyDown(KEY_J)) ShootBullet(cnt, player, dt);
+    if (IsKeyDown(KEY_J)) ShootBullet(ctx, player, dt);
     if (IsKeyDown(KEY_A)) move.x -= 1.0;
     if (IsKeyDown(KEY_D)) move.x += 1.0;
     player.position.x += move.x * player.player.speed * dt;
