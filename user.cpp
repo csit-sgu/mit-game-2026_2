@@ -23,7 +23,18 @@
 // Ваше решение может сильно отличаться.
 //
 Collision CheckCollision(Object &obj1, Object &obj2) {
-    return Collision{};
+    Vector2 d
+        = {obj2.position.x - obj1.position.x, obj2.position.y - obj1.position.y
+        };
+    Vector2 halfSize
+        = {(obj1.collider.width + obj2.collider.width) / 2.0f,
+           (obj1.collider.height + obj2.collider.height) / 2.0f};
+
+    Vector2 overlap = {abs(d.x) - halfSize.x, abs(d.y) - halfSize.y};
+    if (overlap.x < 0 && overlap.y < 0) {
+        return Collision{true, overlap};
+    }
+    return Collision{false, {0, 0}};
 }
 
 // Задание SolveCollision.
@@ -161,6 +172,14 @@ void MoveCameraTowards(Context &ctx, Object &obj, float dt) {}
 // Ваше решение может сильно отличаться.
 //
 bool CheckPlayerDeath(Object &player, Scene &scene) {
+    for (Object &obj : scene) {
+        if (obj.enemy.enabled) {
+            Collision collision = CheckCollision(player, obj);
+            if (collision.exists) {
+                return true;
+            }
+        }
+    }
     return false;
 }
 
