@@ -446,7 +446,67 @@ void DrawDeathScreen(Context &ctx) {}
 //
 // Возможное решение может занимать примерно N строк.
 //
-void DrawGameOverScreen(Context &ctx) {}
+void DrawGameOverScreen(Context &ctx) {
+    
+    DrawRectangle(0, 0, ctx.screen_size.x, ctx.screen_size.y, ColorAlpha(BLACK, 0.85f));
+    
+    float borderSize = 40.0f;
+    DrawRectangleLinesEx(
+        Rectangle{10, 10, ctx.screen_size.x - 20, ctx.screen_size.y - 20}, 
+        4.0f, 
+        ColorAlpha(RED, 0.6f)
+    );
+    
+    const char *gameOverText = "GAME OVER";
+    int fontSize = 60;
+    int gameOverWidth = MeasureText(gameOverText, fontSize);
+    
+    Vector2 gameOverPos = {
+        (ctx.screen_size.x - gameOverWidth) / 2,
+        ctx.screen_size.y / 2 - 80
+    };
+    
+    DrawText(gameOverText, gameOverPos.x + 4, gameOverPos.y + 4, fontSize, ColorAlpha(BLACK, 0.8f));
+    DrawText(gameOverText, gameOverPos.x, gameOverPos.y, fontSize, RED);
+    
+    char scoreText[100];
+    sprintf(scoreText, "Счёт: %d", ctx.score);
+    int scoreWidth = MeasureText(scoreText, 25);
+    DrawText(scoreText, (ctx.screen_size.x - scoreWidth) / 2, ctx.screen_size.y / 2 - 10, 25, YELLOW);
+    
+    char timeText[100];
+    sprintf(timeText, "Время: %.1f сек", ctx.time / 1000.0f);
+    int timeWidth = MeasureText(timeText, 25);
+    DrawText(timeText, (ctx.screen_size.x - timeWidth) / 2, ctx.screen_size.y / 2 + 25, 25, YELLOW);
+    
+    const char *restartText = "Нажмите ENTER чтобы продолжить";
+    int restartWidth = MeasureText(restartText, 20);
+    
+    Vector2 restartPos = {
+        (ctx.screen_size.x - restartWidth) / 2,
+        ctx.screen_size.y - 60
+    };
+    
+    float alpha = 0.5f + sinf(ctx.time * 0.005f) * 0.5f;
+    DrawText(restartText, restartPos.x, restartPos.y, 20, ColorAlpha(WHITE, alpha));
+    
+    int lineWidth = 300;
+    DrawLine(
+        ctx.screen_size.x / 2 - lineWidth / 2, 
+        gameOverPos.y + fontSize + 10,
+        ctx.screen_size.x / 2 + lineWidth / 2, 
+        gameOverPos.y + fontSize + 10,
+        ColorAlpha(WHITE, 0.5f)
+    );
+    
+    if (ctx.heart) {
+        Vector2 heartPos = {ctx.screen_size.x - 50, 20};
+        DrawTextureV(ctx.textures_storage[ctx.heart->hash], heartPos, ColorAlpha(WHITE, 0.5f));
+
+        DrawLine(heartPos.x + 5, heartPos.y + 5, heartPos.x + ctx.heart->width - 5, heartPos.y + ctx.heart->height - 5, RED);
+        DrawLine(heartPos.x + ctx.heart->width - 5, heartPos.y + 5, heartPos.x + 5, heartPos.y + ctx.heart->height - 5, RED);
+    }
+}
 
 // Задание DrawFinishScreen.
 //
