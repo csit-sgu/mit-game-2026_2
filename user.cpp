@@ -172,7 +172,7 @@ void MakeJump(Object &obj, float dt) {
 // Ваше решение может сильно отличаться.
 //
 void MoveCameraTowards(Context &ctx, Object &obj, float dt) {
-    Vector2 a = obj.position ctx.camera_pos;
+    Vector2 a = obj.position - ctx.camera_pos;
 if (Vector2Length(a) < 0.05f) {
 	ctx.camera_pos= obj.position;
 } 
