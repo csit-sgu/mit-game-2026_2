@@ -342,7 +342,7 @@ void KillEnemies(Context &ctx) {
                 continue;
             }
 
-            if (CheckCollision(enemy, bullet)) {
+            if (CheckCollision(enemy, bullet).exists) {
                 ApplyOnDeath(enemy);
                 Destroy(enemy);
                 Destroy(bullet);
