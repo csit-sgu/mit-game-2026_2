@@ -562,7 +562,29 @@ void DrawFinishScreen(Context &ctx) {}
 //
 // Возможное решение может занимать примерно N строк.
 //
-void DrawMainScreen(Context &ctx) {}
+void DrawMainScreen(Context &ctx) {
+    int screenW = (int) ctx.screen_size.x;
+    int screenH = (int) ctx.screen_size.y;
+
+    ClearBackground(DARKBLUE);
+
+    const char *title = "MIT GAME 2026";
+    int titleSize = 50;
+    int titleWidth = MeasureText(title, titleSize);
+    DrawText(title, screenW / 2 - titleWidth / 2, 100, titleSize, YELLOW);
+
+    const char *startMsg = "Press ENTER to start";
+    int startWidth = MeasureText(startMsg, 25);
+    DrawText(startMsg, screenW / 2 - startWidth / 2, 300, 25, WHITE);
+
+    const char *controls = "Controls: A/D - move | SPACE - jump | J - shoot";
+    int controlsWidth = MeasureText(controls, 15);
+    DrawText(
+        controls, screenW / 2 - controlsWidth / 2, screenH - 80, 15, LIGHTGRAY
+    );
+
+    DrawText("Press ESC to quit", screenW - 130, screenH - 30, 12, GRAY);
+}
 
 // Задание ConstructMenuScene.
 //
