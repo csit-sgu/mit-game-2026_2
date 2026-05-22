@@ -564,31 +564,49 @@ void DrawFinishScreen(Context &ctx) {}
 //
 void DrawMainScreen(Context &ctx) {}
 
-// Задание ConstructMenuScene.
-//
-// Функция создаёт объекты в сцене главного меню. Свобода фантазии!
-//
-// Что можно добавить:
-//
-// Необходимо создать пустой объект bg, который будет соответствовать фоновой
-// картинке. В поле bg.render записать новый объект Render, которая читает
-// файл Assets/menu_background.png и задаёт ему размер окна ctx.screen_size.
-//
-// После этого этот объект нужно добавить в сцену через game_scene.push_back.
-//
-// Таким же образом можно добавлять любые другие объекты.
-//
-// Рекомендуемые функции для выполнения задания:
-// - Конструктор класса Render
-// - Конструктор класса Object
-//
-// При выполнении этого задания у вас есть возможность добавить любые другие
-// текстуры в папку Assets!
-//
-// Возможное решение может занимать примерно N строк.
-//
-void ConstructMenuScene(Context &ctx, Scene &game_scene) {}
+void ConstructMenuScene(Context &ctx, Scene &game_scene) {
+    // 1. Фон
+    Object bg;
+    bg.render = Render(ctx, "Assets/menu_background.png", ctx.screen_size);
+    game_scene.push_back(bg);
 
+    // 2. Игрок по центру сверху
+    Object playerLogo;
+    playerLogo.render = Render(ctx, "Assets/player.png", 4.0f);
+    playerLogo.position = {
+        ctx.screen_size.x / 2 - playerLogo.render.width / 2,
+        ctx.screen_size.y / 3
+    };
+    game_scene.push_back(playerLogo);
+
+    // 3. Два врага по бокам
+    Object enemyLeft;
+    enemyLeft.render = Render(ctx, "Assets/enemy1.png", 2.0f);
+    enemyLeft.position = {
+        ctx.screen_size.x / 4 - enemyLeft.render.width / 2,
+        ctx.screen_size.y / 2
+    };
+    game_scene.push_back(enemyLeft);
+
+    Object enemyRight;
+    enemyRight.render = Render(ctx, "Assets/enemy1.png", 2.0f);
+    enemyRight.position = {
+        3 * ctx.screen_size.x / 4 - enemyRight.render.width / 2,
+        ctx.screen_size.y / 2
+    };
+    game_scene.push_back(enemyRight);
+
+    // 4. Три сердечка внизу
+    for (int i = 0; i < 3; i++) {
+        Object heart;
+        heart.render = Render(ctx, "Assets/heart.png", 1.5f);
+        heart.position = {
+            ctx.screen_size.x / 2 - 60 + i * 45,
+            ctx.screen_size.y * 2 / 3
+        };
+        game_scene.push_back(heart);
+    }
+}
 // Задание DrawStatus.
 //
 // Функция рисует панель сверху экрана со статусом игры. Свобода фантазии!
