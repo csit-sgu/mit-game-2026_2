@@ -565,35 +565,27 @@ void DrawFinishScreen(Context &ctx) {}
 void DrawMainScreen(Context &ctx) {}
 
 void ConstructMenuScene(Context &ctx, Scene &game_scene) {
-    // 1. Фон
+    // 1. Фон (должен быть в центре, растянут на весь экран)
     Object bg;
     bg.render = Render(ctx, "Assets/menu_background.png", ctx.screen_size);
+    bg.position = {0, 0};
     game_scene.push_back(bg);
 
     // 2. Игрок по центру сверху
     Object playerLogo;
     playerLogo.render = Render(ctx, "Assets/player.png", 4.0f);
-    playerLogo.position = {
-        ctx.screen_size.x / 2 - playerLogo.render.width / 2,
-        ctx.screen_size.y / 3
-    };
+    playerLogo.position = {0, ctx.screen_size.y / 3};
     game_scene.push_back(playerLogo);
 
     // 3. Два врага по бокам
     Object enemyLeft;
     enemyLeft.render = Render(ctx, "Assets/enemy1.png", 2.0f);
-    enemyLeft.position = {
-        ctx.screen_size.x / 4 - enemyLeft.render.width / 2,
-        ctx.screen_size.y / 2
-    };
+    enemyLeft.position = {-ctx.screen_size.x / 4, 0};
     game_scene.push_back(enemyLeft);
 
     Object enemyRight;
     enemyRight.render = Render(ctx, "Assets/enemy1.png", 2.0f);
-    enemyRight.position = {
-        3 * ctx.screen_size.x / 4 - enemyRight.render.width / 2,
-        ctx.screen_size.y / 2
-    };
+    enemyRight.position = {ctx.screen_size.x / 4, 0};
     game_scene.push_back(enemyRight);
 
     // 4. Три сердечка внизу
@@ -601,8 +593,8 @@ void ConstructMenuScene(Context &ctx, Scene &game_scene) {
         Object heart;
         heart.render = Render(ctx, "Assets/heart.png", 1.5f);
         heart.position = {
-            ctx.screen_size.x / 2 - 60 + i * 45,
-            ctx.screen_size.y * 2 / 3
+            -60 + i * 45,
+            -ctx.screen_size.y / 3
         };
         game_scene.push_back(heart);
     }
