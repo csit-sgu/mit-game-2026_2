@@ -586,31 +586,34 @@ void DrawMainScreen(Context &ctx) {
     DrawText("Press ESC to quit", screenW - 130, screenH - 30, 12, GRAY);
 }
 
-// Задание ConstructMenuScene.
-//
-// Функция создаёт объекты в сцене главного меню. Свобода фантазии!
-//
-// Что можно добавить:
-//
-// Необходимо создать пустой объект bg, который будет соответствовать фоновой
-// картинке. В поле bg.render записать новый объект Render, которая читает
-// файл Assets/menu_background.png и задаёт ему размер окна ctx.screen_size.
-//
-// После этого этот объект нужно добавить в сцену через game_scene.push_back.
-//
-// Таким же образом можно добавлять любые другие объекты.
-//
-// Рекомендуемые функции для выполнения задания:
-// - Конструктор класса Render
-// - Конструктор класса Object
-//
-// При выполнении этого задания у вас есть возможность добавить любые другие
-// текстуры в папку Assets!
-//
-// Возможное решение может занимать примерно N строк.
-//
-void ConstructMenuScene(Context &ctx, Scene &game_scene) {}
+void ConstructMenuScene(Context &ctx, Scene &game_scene) {
+    Object bg;
+    bg.render = Render(ctx, "Assets/menu_background.png", ctx.screen_size);
+    bg.position = Vector2{0, 0};
+    game_scene.push_back(bg);
 
+    Object playerLogo;
+    playerLogo.render = Render(ctx, "Assets/player.png", 4.0f);
+    playerLogo.position = Vector2{0, ctx.screen_size.y / 4.0f};
+    game_scene.push_back(playerLogo);
+
+    Object enemyLeft;
+    enemyLeft.render = Render(ctx, "Assets/enemy1.png", 2.0f);
+    enemyLeft.position = Vector2{-ctx.screen_size.x / 4.0f, 0};
+    game_scene.push_back(enemyLeft);
+
+    Object enemyRight;
+    enemyRight.render = Render(ctx, "Assets/enemy1.png", 2.0f);
+    enemyRight.position = Vector2{ctx.screen_size.x / 4.0f, 0};
+    game_scene.push_back(enemyRight);
+
+    for (int i = 0; i < 3; i++) {
+        Object heart;
+        heart.render = Render(ctx, "Assets/heart.png", 1.5f);
+        heart.position = Vector2{-60.0f + i * 45.0f, -ctx.screen_size.y / 4.0f};
+        game_scene.push_back(heart);
+    }
+}
 // Задание DrawStatus.
 //
 // Функция рисует панель сверху экрана со статусом игры. Свобода фантазии!
