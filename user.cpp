@@ -139,7 +139,22 @@ void FixCollisions(Scene &scene, float dt) {
 // Возможное решение может занимать примерно 8-9 строки.
 // Ваше решение может сильно отличаться.
 //
-void ApplyGravity(Object &obj, float dt) {}
+void ApplyGravity(Object &obj, float dt) {
+    auto &p = obj.physics;
+    const float MAX_FALL = -200.0f;
+
+    if (p.enabled && obj.collider.is_dynamic()) {
+        p.acceleration.y -= GRAVITY * dt;
+        p.speed += p.acceleration;
+
+        if (p.speed.y < MAX_FALL) {
+            p.speed.y = MAX_FALL;
+            p.acceleration.y = 0.0f;
+        }
+
+        obj.position = obj.position + p.speed * dt; // kek
+    }
+}
 
 // Задание MakeJump.
 //
