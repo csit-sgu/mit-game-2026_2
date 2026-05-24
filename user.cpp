@@ -341,11 +341,14 @@ void KillEnemies(Context &ctx) {
             if (!bullet.bullet.enabled) {
                 continue;
             }
+            Collision c = CheckCollision(enemy, bullet);
 
-            if (CheckCollision(enemy, bullet).exists) {
-                ApplyOnDeath(enemy);
-                Destroy(enemy);
-                Destroy(bullet);
+            if (c.exists) {
+                ApplyOnDeath(ctx, enemy);
+                Destroy(ctx, enemy);
+                Destroy(ctx, bullet);
+                enemy.enemy.enabled = false;
+                break;
             }
         }
     }
