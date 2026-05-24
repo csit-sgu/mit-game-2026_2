@@ -139,20 +139,21 @@ void FixCollisions(Scene &scene, float dt) {
 // Возможное решение может занимать примерно 8-9 строки.
 // Ваше решение может сильно отличаться.
 //
+
 void ApplyGravity(Object &obj, float dt) {
     auto &p = obj.physics;
     const float MAX_FALL = -200.0f;
 
-    if (p.enabled && obj.collider.is_dynamic()) {
-        p.acceleration.y -= GRAVITY * dt;
+    if (p.enabled && obj.collider.of_type(ColliderType::DYNAMIC)) {
+        p.acceleration.y -= GRAVITY * (dt * dt);
         p.speed += p.acceleration;
 
-        if (p.speed.y < MAX_FALL) {
-            p.speed.y = MAX_FALL;
+        if (std::abs(obj.physics.speed.y) >= std::abs(MAX_FALL)) {
             p.acceleration.y = 0.0f;
+            p.speed.y = MAX_FALL;
         }
 
-        obj.position = obj.position + p.speed * dt; // kek
+        obj.position = Vector2Add(obj.position, p.speed * dt);
     }
 }
 
