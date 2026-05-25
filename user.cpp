@@ -372,8 +372,18 @@ void PlayerControl(Context &ctx, Object &player, float dt) {
 //
 // Возможное решение может занимать примерно 8-10 строк.
 //
-void ShootBullet(Context &ctx, Object &player, float dt) {}
-
+void ShootBullet(Context &ctx, Object &player, float dt) {
+    Object bullet;
+    bullet.position = player.position;
+    bullet.render = Render(ctx, "Assets/bullet.png");
+    bullet.collider = Collider(bullet.render, ColliderType::EVENT); 
+    float speedX = 450.0f;
+    if (player.player.direction == Direction::LEFT) {
+        speedX = -speedX;
+    }
+    bullet.bullet = Bullet(Vector2{speedX, 0.0f}, 2.0f);
+    Spawn(ctx, bullet);
+}
 // Задание UpdateBullet.
 //
 // Эта функция вызывается для всех снарядов, запущенных игроком. У
