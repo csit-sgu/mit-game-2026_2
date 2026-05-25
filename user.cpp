@@ -23,18 +23,7 @@
 // Ваше решение может сильно отличаться.
 //
 Collision CheckCollision(Object &obj1, Object &obj2) {
-    Vector2 d
-        = {obj2.position.x - obj1.position.x, obj2.position.y - obj1.position.y
-        };
-    Vector2 halfSize
-        = {(obj1.collider.width + obj2.collider.width) / 2.0f,
-           (obj1.collider.height + obj2.collider.height) / 2.0f};
-
-    Vector2 overlap = {abs(d.x) - halfSize.x, abs(d.y) - halfSize.y};
-    if (overlap.x < 0 && overlap.y < 0) {
-        return Collision{true, overlap};
-    }
-    return Collision{false, {0, 0}};
+    return Collision{};
 }
 
 // Задание SolveCollision.
