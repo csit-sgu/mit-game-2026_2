@@ -375,13 +375,15 @@ void PlayerControl(Context &ctx, Object &player, float dt) {
 void ShootBullet(Context &ctx, Object &player, float dt) {
     Object bullet;
     bullet.position = player.position;
-    bullet.render = Render(ctx, "Assets/bullet.png");
-    bullet.collider = Collider(bullet.render, ColliderType::EVENT); 
-    float speedX = 450.0f;
+    bullet.render = Render(ctx, "Assets/bullet.png", 1.0f);
+    bullet.collider.enabled = true;
+    bullet.collider.type = ColliderType::EVENT; 
+    float speedX = 200.0f;
     if (player.player.direction == Direction::LEFT) {
         speedX = -speedX;
     }
-    bullet.bullet = Bullet(Vector2{speedX, 0.0f}, 2.0f);
+    bullet.bullet = Bullet(Vector2{speedX, 0.0f}, 0.0f, 2.0f);
+    bullet.bullet.enabled = true;
     Spawn(ctx, bullet);
 }
 // Задание UpdateBullet.
