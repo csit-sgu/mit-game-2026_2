@@ -354,12 +354,12 @@ void ShootBullet(Context &ctx, Object &player, float dt)
     
     bullet.position = player.position;
     
-    auto render = Render("Assets2/bullet.png");
+    auto render = Render(ctx, "Assets2/bullet.png");
     bullet.render = render;
     
-    auto collider = Collider(bullet.render, ColliderType::EVENT);
+    auto collider = Collider(bullet.render, {ColliderType::EVENT});
     bullet.collider = collider;
-
+    
     float bullet_speed = 500.0f; 
     float velocityX = 0.0f;
     
@@ -373,7 +373,9 @@ void ShootBullet(Context &ctx, Object &player, float dt)
     }
     
     float bullet_life_time = 3.0f; 
-    auto bullet_params = Bullet(velocityX, bullet_life_time);
+    
+    Vector2 bulletVelocity = {velocityX, 0.0f};
+    auto bullet_params = Bullet(bulletVelocity, bullet_life_time);
     bullet.bullet = bullet_params;
     
     Spawn(ctx, bullet);
