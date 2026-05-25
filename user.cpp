@@ -603,8 +603,25 @@ void DrawGameOverScreen(Context &ctx) {
 //
 // Возможное решение может занимать примерно N строк.
 //
-void DrawFinishScreen(Context &ctx) {}
-
+void DrawFinishScreen(Context& ctx){
+    DrawRectangle(0, 0, ctx.screen_size.x, ctx.screen_size.y, ColorAlpha(BLUE, 0.85f));
+    DrawRectangleLinesEx(
+        Rectangle{10, 10, ctx.screen_size.x - 20, ctx.screen_size.y - 20}, 
+        4.0f, 
+        ColorAlpha(WHITE, 0.6f)
+    );
+    const char* text = "WIN";
+    int fontSize = 60;
+    int textWidth = MeasureText(text, fontSize);
+    float x = (ctx.screen_size.x - textWidth) / 2.0f;
+    float y = ctx.screen_size.y / 2.0f - 80;
+    DrawText(text, (int)x + 4, (int)y + 4, fontSize, ColorAlpha(BLACK, 0.8f));
+    DrawText(text, (int)x, (int)y, fontSize, WHITE);
+    const char* restartText = "Нажмите ENTER чтобы продолжить";
+    int restartWidth = MeasureText(restartText, 20);
+    float alpha = 0.5f + sinf(ctx.time * 0.005f) * 0.5f;
+    DrawText(restartText, (ctx.screen_size.x - restartWidth) / 2, ctx.screen_size.y - 60, 20, ColorAlpha(WHITE, alpha));
+}
 // Задание DrawMainScreen.
 //
 // Функция отрисовывает основной экран игры. Свобода фантазии!
