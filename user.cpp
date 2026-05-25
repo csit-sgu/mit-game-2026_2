@@ -539,8 +539,16 @@ void ApplyOnSpawn(Context &ctx, Object &obj) {
 //
 // Возможное решение может занимать примерно N строк.
 //
-void DrawDeathScreen(Context &ctx) {}
-
+void DrawDeathScreen(Context &ctx) {
+    int sw = (int)ctx.screen_size.x;
+    int sh = (int)ctx.screen_size.y;
+    DrawRectangle(0, 0, sw, sh, Color{30, 0, 10, 255});
+    const char *text = "TO BE CONTINUED";
+    int fontSize = 50;
+    int textWidth = MeasureText(text, fontSize);
+    DrawText(text, (sw - textWidth) / 2 + 4, sh / 2 - fontSize / 2 + 4, fontSize, Color{15, 0, 5, 200});
+    DrawText(text, (sw - textWidth) / 2, sh / 2 - fontSize / 2, fontSize, Color{180, 180, 180, 255});
+}
 // Задание DrawGameOverScreen.
 //
 // Данная функция выполняется когда игрок умер несколько раз и у него
