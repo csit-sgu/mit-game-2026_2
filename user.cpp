@@ -1,5 +1,6 @@
 #include "user.hpp"
 #include "internal.hpp"
+#include <string>
 
 #include <raymath.h>
 #include <raylib.h>
@@ -23,7 +24,28 @@
 // Ваше решение может сильно отличаться.
 //
 Collision CheckCollision(Object &obj1, Object &obj2) {
-    return Collision{};
+    double dx = obj2.position.x - obj1.position.x, dy = obj2.position.y - obj1.position.y;
+    double w1 = obj1.collider.width;
+    double h1 = obj1.collider.height;
+    double w2 = obj2.collider.width;
+    double h2 = obj2.collider.height;
+    double halfWidthSum = (w1 + w2) / 2.0f;
+    double halfHeightSum = (h1 + h2) / 2.0f;
+
+    double qx = std::abs(dx) - halfWidthSum;
+    double qy = std::abs(dy) - halfHeightSum;
+
+    Collision result;
+    if (qx < 0 && qy < 0) {
+	    result.exists = true;
+	    result.overlap.x = std::abs(qx);
+	    result.overlap.y = std::abs(qy);  
+    } else {
+	    result.exists = false;
+	    result.overlap.x = 0;
+	    result.overlap.y = 0;
+    }
+    return result;
 }
 
 // Задание SolveCollision.
@@ -47,21 +69,24 @@ Collision CheckCollision(Object &obj1, Object &obj2) {
 // Ваше решение может сильно отличаться.
 //
 void SolveCollision(Object &obj, Collision c, float dt) {
-	if (!c.exists) return;
-
-	if (std::abs(c.overlap.x) > std::abs(c.overlap.y)) {
-		obj.position.x += c.overlap.x;
-	} else {
-		obj.position.y += c.overlap.y;
-
-		if (c.overlap.y < 0) {
-			obj.physics.speed.y = 0;
-			obj.physics.acceleration.y = 0;
-			obj.physics.can_jump = true;
-		} else if (c.overlap.y > 0) {
-			obj.physics.speed.y = 0;
-		}
-	}
+    if (c.exists) {
+        if (std::abs(c.overlap.x) > std::abs(c.overlap.y)) {
+            obj.position.x-=c.overlap.x;
+        }
+        else {
+            obj.position.y-=c.overlap.y;
+        }
+        if (c.overlap.y > 0) {
+            obj.physics.speed.y = 0;
+        }
+        if (c.overlap.y < 0) {
+            obj.physics.acceleration.y = 0;
+            if (obj.physics.speed.y < 0) {
+                obj.physics.can_jump = true;
+                obj.physics.speed.y = 0;
+            }
+        }
+    }
 }
 
 // Задание FixCollisions.
@@ -100,16 +125,15 @@ void SolveCollision(Object &obj, Collision c, float dt) {
 //
 void FixCollisions(Scene &scene, float dt) {
     for (Object &obj1 : scene) {
-        if (!obj1.collider.enabled) continue;
-        if (!obj1.collider.of_type(ColliderType::DYNAMIC)) continue;
-        for (Object &obj2 : scene) {
-            if (obj1 == obj2) continue;
-            if (!obj2.collider.enabled) continue;
-            if (!obj2.collider.of_type(ColliderType::DYNAMIC) &&
-                !obj2.collider.of_type(ColliderType::STATIC)) continue;
-            Collision c = CheckCollision(obj1, obj2);
-            if (!c.exists) continue;
-            SolveCollision(obj1, c, dt);
+        if (obj1.collider.enabled && obj1.collider.of_type(ColliderType::DYNAMIC)) {
+            for (Object &obj2 : scene) {
+                if (obj1 != obj2 && obj2.collider.enabled && (obj2.collider.of_type(ColliderType::DYNAMIC) || obj2.collider.of_type(ColliderType::STATIC))){
+                Collision collision = CheckCollision(obj1, obj2);
+                if (collision.exists) {
+                    SolveCollision(obj1, collision, dt);
+                   }
+                }
+            }
         }
     }
 }
@@ -139,20 +163,18 @@ void FixCollisions(Scene &scene, float dt) {
 // Возможное решение может занимать примерно 8-9 строки.
 // Ваше решение может сильно отличаться.
 //
-
 void ApplyGravity(Object &obj, float dt) {
-    auto &p = obj.physics;
-    const float MAX_FALL = -200.0f;
-
+    Physics &p = obj.physics;
     if (p.enabled && obj.collider.of_type(ColliderType::DYNAMIC)) {
-        p.acceleration.y -= GRAVITY * (dt * dt);
+        p.acceleration.y -= GRAVITY * (dt * dt);  //
         p.speed += p.acceleration;
 
-        if (std::abs(obj.physics.speed.y) >= std::abs(MAX_FALL)) {
-            p.acceleration.y = 0.0f;
-            p.speed.y = MAX_FALL;
-        }
+        const float MAX_FALL_SPEED = -200.0f;
 
+        if (std::abs(obj.physics.speed.y) >= std::abs(MAX_FALL_SPEED)) {
+            p.acceleration.y = 0.0f;
+            p.speed.y = MAX_FALL_SPEED;
+        }
         obj.position = Vector2Add(obj.position, p.speed * dt);
     }
 }
@@ -172,20 +194,13 @@ void ApplyGravity(Object &obj, float dt) {
 // Возможное решение может занимать примерно 3 строки.
 // Ваше решение может сильно отличаться.
 //
-
 void MakeJump(Object &obj, float dt) {
     if (obj.physics.can_jump) {
-        float jumpPower = 350.0f;  // обычный прыжок
-        
-        // Если зажат Shift — прыжок выше
-        if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) {
-            jumpPower = 550.0f;
-        }
-        
-        obj.physics.speed.y = jumpPower;
+        obj.physics.speed.y += 7.0f;
         obj.physics.can_jump = false;
     }
 }
+
 // Задание MoveCameraTowards.
 //
 // Эта функция вызывается каждый кадр игры. Необходимо, чтобы камера следовала
@@ -204,13 +219,10 @@ void MakeJump(Object &obj, float dt) {
 // Ваше решение может сильно отличаться.
 //
 void MoveCameraTowards(Context &ctx, Object &obj, float dt) {
-    Vector2 a = obj.position - ctx.camera_pos;
-if (Vector2Length(a) < 0.05f) {
-	ctx.camera_pos= obj.position;
-} 
-else {
-	ctx.camera_pos += a * dt * 1.6f;
-}
+	const auto v = obj.position - ctx.camera_pos;
+	if (Vector2Length(v) > 2.0f) {
+		ctx.camera_pos += v * 1.5 * dt;
+	}
 }
 
 // Задание CheckPlayerDeath.
@@ -227,10 +239,9 @@ else {
 // Ваше решение может сильно отличаться.
 //
 bool CheckPlayerDeath(Object &player, Scene &scene) {
-    for (Object &obj : scene) {
+    for (auto &obj : scene) {
         if (obj.enemy.enabled) {
-            Collision collision = CheckCollision(player, obj);
-            if (collision.exists) {
+            if (CheckCollision(obj, player).exists) {
                 return true;
             }
         }
@@ -256,11 +267,7 @@ bool CheckPlayerDeath(Object &player, Scene &scene) {
 //
 bool CheckFinish(Object &player, Scene &scene) {
     for (auto &obj : scene) {
-        if (!obj.finish.enabled) {
-            continue;
-        }
-        Collision c = CheckCollision(player, obj);
-        if (c.exists) {
+        if (obj.finish.enabled && CheckCollision(player, obj).exists) {
             return true;
         }
     }
@@ -295,7 +302,18 @@ bool CheckFinish(Object &player, Scene &scene) {
 // Возможное решение может занимать примерно 16-20 строк.
 // Ваше решение может сильно отличаться.
 //
-void EnemyAI(Object &enemy, Scene &scene, float dt) {}
+void EnemyAI(Object &enemy, Scene &scene, float dt) {
+    Object *player = find_player(scene);
+    if (!player) {
+        return;
+    }
+    float move = enemy.enemy.speed * dt;
+    if (enemy.position.x > player->position.x) {
+        enemy.position.x -= move;
+    } else {
+        enemy.position.x += move;
+    }
+}
 
 // Задание PlayerControl.
 //
@@ -326,13 +344,26 @@ void EnemyAI(Object &enemy, Scene &scene, float dt) {}
 // Ваше решение может сильно отличаться.
 //
 void PlayerControl(Context &ctx, Object &player, float dt) {
-    if (ctx.input_blocked) return;
-    Vector2 move = {0.0, 0.0};
-    if (IsKeyDown(KEY_SPACE)) MakeJump(player, dt);
-    if (IsKeyDown(KEY_J)) ShootBullet(ctx, player, dt);
-    if (IsKeyDown(KEY_A)) move.x -= 1.0;
-    if (IsKeyDown(KEY_D)) move.x += 1.0;
+    if (ctx.input_blocked) {
+        return;
+    }
+    if (IsKeyDown(KEY_SPACE)) {
+        MakeJump(player, dt);
+    }
+    if (IsKeyDown(KEY_J)) {
+        ShootBullet(ctx, player, dt);
+    }
+    Vector2 move = {0.0f, 0.0f};
+    if (IsKeyDown(KEY_A)) {
+        move.x -= 1.0f;
+        player.player.direction = Direction::LEFT;
+    }
+    if (IsKeyDown(KEY_D)) {
+        move.x += 1.0f;
+        player.player.direction = Direction::RIGHT;
+    }
     player.position.x += move.x * player.player.speed * dt;
+    player.position.y += move.y * player.player.speed * dt;
 }
 
 // Задание ShootBullet.
@@ -375,17 +406,14 @@ void PlayerControl(Context &ctx, Object &player, float dt) {
 void ShootBullet(Context &ctx, Object &player, float dt) {
     Object bullet;
     bullet.position = player.position;
-    bullet.render = Render(ctx, "Assets/bullet.png", 1.0f);
-    bullet.collider.enabled = true;
-    bullet.collider = Collider(bullet.render, {ColliderType::EVENT}); 
-    float speedX = 200.0f;
-    if (player.player.direction == Direction::LEFT) {
-        speedX = -speedX;
-    }
-    bullet.bullet = Bullet(Vector2{speedX, 0.0f}, 2.0f);
-    bullet.bullet.enabled = true;
+    bullet.render = Render(ctx, "Assets/bullet.png");
+    bullet.collider = Collider(bullet.render, {ColliderType::EVENT});
+    float speedX
+        = (player.player.direction == Direction::RIGHT) ? 50.0f : -50.0f;
+    bullet.bullet = Bullet({speedX, 0.0f}, 2.0f);
     Spawn(ctx, bullet);
 }
+
 // Задание UpdateBullet.
 //
 // Эта функция вызывается для всех снарядов, запущенных игроком. У
@@ -410,14 +438,7 @@ void ShootBullet(Context &ctx, Object &player, float dt) {
 // Возможное решение может занимать примерно 4-5 строк.
 // Ваше решение может сильно отличаться.
 //
-void UpdateBullet(Context &ctx, Object &obj, float dt) {
-    obj.position += obj.bullet.speed * dt;
-    obj.bullet.lifetime += dt;
-    if (obj.bullet.lifetime >= obj.bullet.max_lifetime) {
-        Destroy(ctx, obj);
-    }
-
-}
+void UpdateBullet(Context &ctx, Object &obj, float dt) {}
 
 // Задание KillEnemies.
 //
@@ -441,28 +462,7 @@ void UpdateBullet(Context &ctx, Object &obj, float dt) {
 //
 // Возможное решение может занимать примерно 14-20 строк.
 //
-void KillEnemies(Context &ctx) {
-    for (auto &enemy : ctx.current_scene) {
-        if (!enemy.enemy.enabled) {
-            continue;
-        }
-
-        for (auto &bullet : ctx.current_scene) {
-            if (!bullet.bullet.enabled) {
-                continue;
-            }
-            Collision c = CheckCollision(enemy, bullet);
-
-            if (c.exists) {
-                ApplyOnDeath(ctx, enemy);
-                Destroy(ctx, enemy);
-                Destroy(ctx, bullet);
-                enemy.enemy.enabled = false;
-                break;
-            }
-        }
-    }
-}
+void KillEnemies(Context &ctx) {}
 
 // Задание ApplyOnDeath.
 //
@@ -489,11 +489,13 @@ void KillEnemies(Context &ctx) {
 //
 void ApplyOnDeath(Context &ctx, Object &obj) {
     if (obj.player.enabled) {
-        Sound deathSound = LoadSound("Assets/Sounds/death.mp3");
-        PlaySound(deathSound);
+       Sound sound_death = LoadSound("Assets/Sounds/death.mp3");
+       PlaySound(sound_death);
+       UnloadSound(sound_death);
     } else if (obj.enemy.enabled) {
-        Sound enemyDeathSound = LoadSound("Assets/Sounds/enemy_death.mp3");
-        PlaySound(enemyDeathSound);
+        Sound sound_death = LoadSound("Assets/Sounds/enemy_death.mp3");
+        PlaySound(sound_death);
+        UnloadSound(sound_death);
     }
 }
 
@@ -516,14 +518,8 @@ void ApplyOnDeath(Context &ctx, Object &obj) {
 // звуки выстрелов Assets/Sounds/shot.mp3.
 //
 // Возможное решение может занимать примерно 3 строки.
-// 
-
-void ApplyOnSpawn(Context &ctx, Object &obj) {
-    if (obj.bullet.enabled) {
-        Sound shotSound = LoadSound("Assets/Sounds/shot.mp3");
-        PlaySound(shotSound);
-    }
-}
+//
+void ApplyOnSpawn(Context &ctx, Object &obj) {}
 
 // Задание DrawDeathScreen.
 //
@@ -542,13 +538,28 @@ void ApplyOnSpawn(Context &ctx, Object &obj) {
 void DrawDeathScreen(Context &ctx) {
     int sw = (int)ctx.screen_size.x;
     int sh = (int)ctx.screen_size.y;
-    DrawRectangle(0, 0, sw, sh, Color{30, 0, 10, 255});
-    const char *text = "TO BE CONTINUED";
-    int fontSize = 50;
-    int textWidth = MeasureText(text, fontSize);
-    DrawText(text, (sw - textWidth) / 2 + 4, sh / 2 - fontSize / 2 + 4, fontSize, Color{15, 0, 5, 200});
-    DrawText(text, (sw - textWidth) / 2, sh / 2 - fontSize / 2, fontSize, Color{180, 180, 180, 255});
+
+    DrawRectangle(0, 0, sw, sh, Color{20, 0, 0, 200});
+
+    DrawRectangle(0, sh / 2 - 80, sw, 160, Color{80, 0, 0, 180});
+
+    const char *title = "YOU DIED";
+    int titleSize = 72;
+    int titleWidth = MeasureText(title, titleSize);
+    DrawText(title, (sw - titleWidth) / 2, sh / 2 - 70, titleSize, Color{200, 30, 30, 255});
+
+    DrawText(title, (sw - titleWidth) / 2 + 3, sh / 2 - 55, titleSize, Color{80, 0, 0, 180});
+
+    const char *sub = TextFormat("Lives remaining: %d   |   Press R to respawn", ctx.lives);
+    int subSize = 22;
+    int subWidth = MeasureText(sub, subSize);
+    DrawText(sub, (sw - subWidth) / 2, sh / 2 + 30, subSize, Color{220, 180, 180, 255});
+    const char *scoreText = TextFormat("Score: %d", ctx.score);
+    int scoreSize = 20;
+    int scoreWidth = MeasureText(scoreText, scoreSize);
+    DrawText(scoreText, (sw - scoreWidth) / 2, sh / 2 + 50, scoreSize, Color{200, 200, 200, 200});
 }
+
 // Задание DrawGameOverScreen.
 //
 // Данная функция выполняется когда игрок умер несколько раз и у него
@@ -563,51 +574,7 @@ void DrawDeathScreen(Context &ctx) {
 //
 // Возможное решение может занимать примерно N строк.
 //
-void DrawGameOverScreen(Context &ctx) {
-    // фон 
-    DrawRectangle(0, 0, ctx.screen_size.x, ctx.screen_size.y, ColorAlpha(BLACK, 0.85f));
-    
-    // красная рамка по краям экрана
-    DrawRectangleLinesEx(
-        Rectangle{10, 10, ctx.screen_size.x - 20, ctx.screen_size.y - 20}, 
-        4.0f, 
-        ColorAlpha(RED, 0.6f)
-    );
-    
-    const char *gameOverText = "GAME OVER";
-    int fontSize = 60;
-    int gameOverWidth = MeasureText(gameOverText, fontSize);
-    
-    Vector2 gameOverPos = {
-        (ctx.screen_size.x - gameOverWidth) / 2,
-        ctx.screen_size.y / 2 - 80
-    };
-
-    DrawText(gameOverText, gameOverPos.x + 4, gameOverPos.y + 4, fontSize, ColorAlpha(BLACK, 0.8f));
-    DrawText(gameOverText, gameOverPos.x, gameOverPos.y, fontSize, RED);
-    
-    // отображение набранных очков 
-    char scoreText[100];
-    sprintf(scoreText, "Счёт: %d", ctx.score);
-    int scoreWidth = MeasureText(scoreText, 25);
-    DrawText(scoreText, (ctx.screen_size.x - scoreWidth) / 2, ctx.screen_size.y / 2 - 10, 25, YELLOW);
-    
-    // отображение времени игры 
-    char timeText[100];
-    sprintf(timeText, "Время: %.1f сек", ctx.time / 1000.0f);
-    int timeWidth = MeasureText(timeText, 25);
-    DrawText(timeText, (ctx.screen_size.x - timeWidth) / 2, ctx.screen_size.y / 2 + 25, 25, YELLOW);
-    
-    //подсказка для возврата в меню
-    const char *restartText = "Нажмите ENTER чтобы продолжить";
-    int restartWidth = MeasureText(restartText, 20);
-    
-    Vector2 restartPos = {
-        (ctx.screen_size.x - restartWidth) / 2,
-        ctx.screen_size.y - 60
-    };
-    DrawText(restartText, restartPos.x, restartPos.y, 20, WHITE);
-}
+void DrawGameOverScreen(Context &ctx) {}
 
 // Задание DrawFinishScreen.
 //
@@ -624,24 +591,15 @@ void DrawGameOverScreen(Context &ctx) {
 // Возможное решение может занимать примерно N строк.
 //
 void DrawFinishScreen(Context& ctx){
-    DrawRectangle(0, 0, ctx.screen_size.x, ctx.screen_size.y, ColorAlpha(BLUE, 0.85f));
-    DrawRectangleLinesEx(
-        Rectangle{10, 10, ctx.screen_size.x - 20, ctx.screen_size.y - 20}, 
-        4.0f, 
-        ColorAlpha(WHITE, 0.6f)
-    );
-    const char* text = "WIN";
-    int fontSize = 60;
-    int textWidth = MeasureText(text, fontSize);
-    float x = (ctx.screen_size.x - textWidth) / 2.0f;
-    float y = ctx.screen_size.y / 2.0f - 80;
-    DrawText(text, (int)x + 4, (int)y + 4, fontSize, ColorAlpha(BLACK, 0.8f));
-    DrawText(text, (int)x, (int)y, fontSize, WHITE);
-    const char* restartText = "Нажмите ENTER чтобы продолжить";
-    int restartWidth = MeasureText(restartText, 20);
-    float alpha = 0.5f + sinf(ctx.time * 0.005f) * 0.5f;
-    DrawText(restartText, (ctx.screen_size.x - restartWidth) / 2, ctx.screen_size.y - 60, 20, ColorAlpha(WHITE, alpha));
+    const char* text = "LEVEL COMPLETE!";
+    float fontSize = 40.0f;
+    float textWidth = (float)MeasureText(text, (int)fontSize);
+    float x = ctx.screen_size.x / 2.0f - textWidth / 2.0f;
+    float y = ctx.screen_size.y / 2.0f - fontSize / 2.0f;
+    DrawRectangle(0, 0, ctx.screen_size.x, ctx.screen_size.y, BLACK);
+    DrawText(text, (int)x, (int)y, (int)fontSize, WHITE);
 }
+
 // Задание DrawMainScreen.
 //
 // Функция отрисовывает основной экран игры. Свобода фантазии!
@@ -653,59 +611,70 @@ void DrawFinishScreen(Context& ctx){
 // Возможное решение может занимать примерно N строк.
 //
 void DrawMainScreen(Context &ctx) {
-    int screenW = (int) ctx.screen_size.x;
-    int screenH = (int) ctx.screen_size.y;
+    int screen_width = (int)ctx.screen_size.x;
+    int screen_height = (int)ctx.screen_size.y;
 
-    ClearBackground(DARKBLUE);
+    DrawRectangle(0, 0, screen_width, screen_height, Color{0, 0, 0, 150});
 
-    const char *title = "MIT GAME 2026";
-    int titleSize = 50;
-    int titleWidth = MeasureText(title, titleSize);
-    DrawText(title, screenW / 2 - titleWidth / 2, 100, titleSize, YELLOW);
+    const char *game_name = "MIT GAME";
+    int game_name_size = 80;
+    int game_name_width = MeasureText(game_name, game_name_size);
+    DrawText(game_name, (screen_width - game_name_width) / 2, screen_height / 2 - 120, game_name_size, Color{255, 220, 50, 255});
 
-    const char *startMsg = "Press ENTER to start";
-    int startWidth = MeasureText(startMsg, 25);
-    DrawText(startMsg, screenW / 2 - startWidth / 2, 300, 25, WHITE);
+    const char *game_description = "A great adventure awaits!";
+    int description_size = 24;
+    int description_width = MeasureText(game_description, description_size);
+    DrawText(game_description, (screen_width - description_width) / 2, screen_height / 2 - 20, description_size, Color{200, 200, 200, 255});
 
-    const char *controls = "Controls: A/D - move | SPACE - jump | J - shoot";
-    int controlsWidth = MeasureText(controls, 15);
-    DrawText(
-        controls, screenW / 2 - controlsWidth / 2, screenH - 80, 15, LIGHTGRAY
-    );
-
-    DrawText("Press ESC to quit", screenW - 130, screenH - 30, 12, GRAY);
+    if (fmod(GetTime(), 0.5) < 0.25) {
+        const char *start_hint = "Press ENTER to start";
+        int hint_size = 28;
+        int hint_width = MeasureText(start_hint, hint_size);
+        DrawText(start_hint, (screen_width - hint_width) / 2, screen_height / 2 + 60, hint_size, Color{255, 255, 255, 255});
+    }
 }
 
+// Задание ConstructMenuScene.
+//
+// Функция создаёт объекты в сцене главного меню. Свобода фантазии!
+//
+// Что можно добавить:
+//
+// Необходимо создать пустой объект bg, который будет соответствовать фоновой
+// картинке. В поле bg.render записать новый объект Render, которая читает
+// файл Assets/menu_background.png и задаёт ему размер окна ctx.screen_size.
+//
+// После этого этот объект нужно добавить в сцену через game_scene.push_back.
+//
+// Таким же образом можно добавлять любые другие объекты.
+//
+// Рекомендуемые функции для выполнения задания:
+// - Конструктор класса Render
+// - Конструктор класса Object
+//
+// При выполнении этого задания у вас есть возможность добавить любые другие
+// текстуры в папку Assets!
+//
+// Возможное решение может занимать примерно N строк.
+//
 void ConstructMenuScene(Context &ctx, Scene &game_scene) {
+    // Фон
     Object bg;
     bg.render = Render(ctx, "Assets/menu_background.png", ctx.screen_size);
-    bg.position = Vector2{0, 0};
     game_scene.push_back(bg);
 
-    Object playerLogo;
-    playerLogo.render = Render(ctx, "Assets/player.png", 4.0f);
-    playerLogo.position = Vector2{0, ctx.screen_size.y / 4.0f};
-    game_scene.push_back(playerLogo);
-
-    Object enemyLeft;
-    enemyLeft.render = Render(ctx, "Assets/enemy1.png", 2.0f);
-    enemyLeft.position = Vector2{-ctx.screen_size.x / 4.0f, 0};
-    game_scene.push_back(enemyLeft);
-
-    Object enemyRight;
-    enemyRight.render = Render(ctx, "Assets/enemy1.png", 2.0f);
-    enemyRight.position = Vector2{ctx.screen_size.x / 4.0f, 0};
-    game_scene.push_back(enemyRight);
-
-    for (int i = 0; i < 3; i++) {
+    // Декоративные сердечки
+    for (int i = 0; i < 5; i++) {
         Object heart;
-        heart.render = Render(ctx, "Assets/heart.png", 1.5f);
-        heart.position = Vector2{-60.0f + i * 45.0f, -ctx.screen_size.y / 4.0f};
+        heart.render = Render(ctx, "Assets/heart.png", {40.0f, 40.0f});
+        heart.position = {50.0f + i * 100.0f, ctx.screen_size.y - 60.0f};
         game_scene.push_back(heart);
     }
 }
-// Задание DrawStatus.
-//
+
+//Задание DrawStatus.
+void DrawStatus(Context &ctx) {}
+
 // Функция рисует панель сверху экрана со статусом игры. Свобода фантазии!
 //
 // В самой панели должны отображаться следующие параметры:
@@ -730,100 +699,4 @@ void ConstructMenuScene(Context &ctx, Scene &game_scene) {
 //
 // Возможное решение может занимать примерно N строк.
 //
-void DrawStatus(Context& ctx)
-{
-    const float panel_height = 85.0f;
-    const float panel_padding = 25.0f;
-    const float heart_size = 35.0f;
-
-    int screen_width = GetScreenWidth();
-
-    // Полупрозрачный фон с градиентом
-    for (int y = 0; y < panel_height; y++)
-    {
-        float alpha = 0.7f - (y / panel_height) * 0.3f;
-        DrawLine(0, y, screen_width, y,
-            ColorAlpha(BLACK, alpha));
-    }
-
-    // Декоративная рамка снизу
-    DrawRectangle(0, panel_height - 3, screen_width, 3, BLUE);
-
-    // Жизни с анимацией 
-    Texture heart_texture = ctx.textures_storage[ctx.heart->hash];
-    float heart_x = panel_padding;
-    float heart_y = (panel_height - heart_size) / 2;
-
-    for (int i = 0; i < ctx.lives; i++)
-    {
-        // Пульсация при малом количестве жизней
-        Color heart_color = WHITE;
-        float scale = 1.0f;
-
-        if (ctx.lives <= 2 && ctx.lives > 0)
-        {
-            float pulse = sin(ctx.time * 0.008f) * 0.1f + 0.9f;
-            scale = pulse;
-            heart_color = ColorAlpha(RED, 0.8f + pulse * 0.2f);
-        }
-
-        Rectangle dest_rect =
-        {
-            heart_x,
-            heart_y + (heart_size * (1 - scale)) / 2,
-            heart_size * scale,
-            heart_size * scale
-        };
-
-        DrawTexturePro(heart_texture,
-            { 0, 0, (float)heart_texture.width, (float)heart_texture.height },
-            dest_rect, { 0, 0 }, 0, heart_color);
-
-        heart_x += heart_size + 12;
-    }
-
-    // Счет
-    char score_text[64];
-    sprintf(score_text, "%d", ctx.score);
-
-    // Тень для текста
-    DrawText("SCORE:", screen_width / 2 - 100, panel_height / 2 - 20, 20,
-        ColorAlpha(WHITE, 0.5f));
-    DrawText(score_text, screen_width / 2 - 80, panel_height / 2 - 15, 40,
-        ColorAlpha(BLACK, 0.5f));
-    DrawText(score_text, screen_width / 2 - 82, panel_height / 2 - 17, 40,
-        YELLOW);
-
-    // Время с таймером
-    int total_seconds = ctx.time / 1000;
-    int minutes = total_seconds / 60;
-    int seconds = total_seconds % 60;
-
-    char time_text[64];
-    sprintf(time_text, "%02d:%02d", minutes, seconds);
-
-    // Иконка часов 
-    float clock_x = screen_width - 130;
-    float clock_y = panel_height / 2 - 15;
-    DrawCircle(clock_x + 15, clock_y + 15, 18, ColorAlpha(WHITE, 0.3f));
-    DrawCircle(clock_x + 15, clock_y + 15, 15, ColorAlpha(BLACK, 0.5f));
-
-    float angle = (total_seconds % 60) * 6 * DEG2RAD;
-    DrawLineEx({ clock_x + 15, clock_y + 15 },
-        { clock_x + 15 + cos(angle) * 10, clock_y + 15 + sin(angle) * 10 },
-        2, WHITE);
-
-    DrawText(time_text, clock_x + 40, clock_y + 5, 30,
-        total_seconds < 10 ? RED : WHITE);
-
-    // Прогресс бар времени 
-    const int TIME_LIMIT = 300;   
-
-    if (total_seconds > 0 && total_seconds < TIME_LIMIT)
-    {
-        float progress = 1.0f - (float)total_seconds / TIME_LIMIT;
-        DrawRectangle(screen_width - 200, panel_height - 5,
-            200 * progress, 3,
-            ColorAlpha(RED, 0.7f));
-    }
-}
+    
