@@ -209,7 +209,7 @@ if (Vector2Length(a) < 0.05f) {
 	ctx.camera_pos= obj.position;
 } 
 else {
-	ctx.camera_pos += dt * a * 1.6f;
+	ctx.camera_pos += a * dt * 1.6f;
 }
 }
 
